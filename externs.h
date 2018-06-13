@@ -10,8 +10,10 @@
 
 #define MAX_LINE_LEN 80 // The maximum length of a command
 
-void print_history(char *array[], int count);
+void print_history(char *array[], int count, size_t size);
 char *run_last_cmd(char *array[], int count);
 char *run_specific_cmd(char *array[], int count, int index);
+int print_help(void);
+void joke(void);
 
 #endif

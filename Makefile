@@ -1,5 +1,5 @@
 all :
-	gcc -g -o Proj2 Proj2.c Function.c 
+	gcc -g -o fsh fsh.c externs.c 
 
 clean : 
-	rm Proj2
+	rm fsh

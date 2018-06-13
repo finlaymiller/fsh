@@ -2,123 +2,164 @@
 
 int main(void)
 {
-    char *args[MAX_LINE_LEN / 2 + 1]; /* command line arguments */
-    int should_run = 1;               /* flag to determine when to exit program */
-    int i = 0;
-    char command[MAX_LINE_LEN];
-    pid_t pid;
-    int amperflag = 0;
-    int check = 0;
-    int j;
-    int count = 0;
-    char *save[MAX_LINE_LEN / 2 + 1];
-    char *save_command;
-    char *res_command;
-    char *tkn;
+    char *args[MAX_LINE_LEN / 2 + 1];   // an array of arguments
+    char command[MAX_LINE_LEN];         // the input command
+    char *history[MAX_LINE_LEN / 2 + 1];// an array of saved commands
+    char *current_cmd;                  // the command currently being worked with
+    char *tmp_command;                  // a temporary command holder used when handling '!!' or '!'
+    char *tkn;                          // a pointer to the first token of the command
+    int should_run = 1;                 // flag for controlling whether or not the program should run
+    int i;                              // the counter for the args array
+    int j;                              // the counter used to initially clear args array
+    int amperflag;                      // flag set when '&' character is detected
+    int count = 0;                      // the number of commands in history
+    pid_t pid;                          // the process identification number
+    size_t size;                        // the size of the history array
+    int k = 0;
+
+    //lsta
+    //lstb
+    //con-ptr-500
+    //rcl
+    printf("\n\nfsh shell interface - Version %s (%s)\n", CURRENT_VERSION, UPDATE_DATE);
+	printf("Written by Finlay Miller (B00675696) for CSCI3120 Assignment #1\n");
+    printf("Enter 'fhelp' for help.\n\n\n");
 
     while (should_run)
     {
+        // initialize values
         i = 0;
         amperflag = 0;
-        check = 0;
-        fflush(stdout);
         fflush(stdin);
-
-        // initialize values
+        fflush(stdout);
         command[0] = '\0';
         memset(command, 0, MAX_LINE_LEN);
         for (j = 0; j < (MAX_LINE_LEN / 2 + 1); j++)
+        {
             args[j] = '\0';
-        printf("osh>");
+            history[j] = NULL;
+        } 
 
+        printf("fsh> ");
+
+        // get input and check for exit command
         fgets(command, MAX_LINE_LEN, stdin);
         strtok(command, "\n");
-        printf("%c %c %c %c %c %c %c \n", command[0], command[1], command[2], command[3], command[4], command[5], command[6]);
         if (strcmp(command, "exit") == 0)
-            should_run = 0;
-
-        // count the number of commands
-        save_command = command;
-        if (strcmp(save_command, "exit") == 0)
-            break;
-
-        // check for 'history' command
-        if (strcmp(save_command, "history") != 0 && (save_command[0] != '!'))
         {
-            save[count++] = strdup(save_command);
+            should_run = 0;
+            break;
         }
-        else if (strcmp(save_command, "history") == 0)
+
+        // set command pointer to preserve original string
+        current_cmd = command;
+
+        // check for 'fhelp' command
+        if (strcmp(current_cmd, "fhelp") == 0)
+        {
+            if(!print_help())
+                printf("Failed to print help.\n");
+        }
+
+        if ((strcmp(current_cmd, "history") != 0) && (current_cmd[0] != '!'))
+        {
+            history[count++] = strdup(current_cmd);
+        }
+        // check for 'history' command
+        else if (strcmp(current_cmd, "history") == 0)
         {
             if (count == 0)
             {
                 printf("No commands in history\n");
                 continue;
             }
-            print_history(save, count);
+            
+            k = 0;
+            while(history[k] != NULL) 
+            {
+                printf("history[k] is %s\n", history[k]);
+                k++;
+            }
+            size = k;
+
+            print_history(history, count, size);
             continue;
         }
+
         // check for '!!' command
-        if ((strcmp(save_command, "!!") == 0))
+        if ((strcmp(current_cmd, "!!") == 0))
         {
             if (count == 0)
             {
                 printf("No commands in history\n");
                 continue;
             }
-            res_command = strdup(run_last_cmd(save, count));
-            save[count++] = strdup(res_command);
-            strcpy(command, res_command);
+            
+            // run last command
+            tmp_command = strdup(run_last_cmd(history, count));
+            history[count++] = strdup(tmp_command);
+            strcpy(command, tmp_command);
         }
         // check for '!' command
-        else if (save_command[0] == '!')
+        else if (current_cmd[0] == '!')
         {
 
-            int index = save_command[1] - '0';
-            if (save_command[2] - '0' == 0)
+            int index = current_cmd[1] - '0';
+            if (current_cmd[2] - '0' == 0)
                 index = 10;
             if (count == 0 || index > count)
             {
                 printf("No command in history\n");
                 continue;
             }
-            res_command = strdup(run_specific_cmd(save, count, index));
-            printf(">>>>%s\n", res_command);
-            save[count++] = strdup(res_command);
-            strcpy(command, res_command);
+            
+            // run specified command
+            tmp_command = strdup(run_specific_cmd(history, count, index));
+            history[count++] = strdup(tmp_command);
+            strcpy(command, tmp_command);
         }
 
+        if(strcmp(current_cmd, "joke") == 0)
+            joke();
+
+        // once specific commands are checked for, tokenize the command string
         tkn = strtok(command, " ");
         while (tkn != NULL)
         {
             args[i++] = tkn;
             tkn = strtok(NULL, " ");
         }
+
+        // add null terminator
         args[i] = NULL;
+
+        // check for ampersand
         if ((strcmp(args[i - 1], "&") == 0))
         {
             amperflag = 1;
             args[i - 1] = NULL;
         }
-        if ((strcmp(args[0], "exit") == 0))
-            break;
 
         // handle fork
         pid = fork();
 
         if (pid < 0)
         {
-            fprintf(stderr, "Frok failed");
+            fprintf(stderr, "Fork failed.\n");
             return 1;
         }
         else if (pid == 0)
         {
             // child
-            if (strcmp(save_command, "exit") == 0)
+            if (strcmp(current_cmd, "exit") == 0)
                 break;
 
-            if (strcmp(save_command, "history") == 0 || strcmp(save_command, "!!") == 0 || (save_command[0] == '!'))
+            if (strcmp(current_cmd, "history") == 0 || strcmp(current_cmd, "!!") == 0 || (current_cmd[0] == '!'))
             {
-                print_history(save, count);
+                printf("/n/n/t/tHERE/n/n");
+                while(history[k] != '\0') k++;
+                size = k;
+                print_history(history, count, size);
             }
             else
             {
@@ -129,20 +170,17 @@ int main(void)
         else
         {
             // parent
-            if (strcmp(save_command, "exit") == 0)
+            if (strcmp(current_cmd, "exit") == 0)
                 break;
 
             if (amperflag)
             {
-                // sleep until seconds seconds have elapsed
+                // sleep until seconds have elapsed
                 sleep(1);
-                printf("&\tDone.\n");
+                printf("\tDone.\n");
             }
-            else
-            {
-                wait(NULL);
-                printf(">>>Wait Until Child Complete.\n");
-            }
+            // wait for child processes to complete
+            else wait(NULL);
         }
     }
     return 0;
