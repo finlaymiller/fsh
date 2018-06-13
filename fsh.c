@@ -94,15 +94,11 @@ int main(void)
             tkn = strtok(NULL, " ");
         }
         args[i] = NULL;
-        // check the tail of &
-        // You can't (usefully) compare strings using != or ==, you need to use strcmp:
         if ((strcmp(args[i - 1], "&") == 0))
         {
             amperflag = 1;
             args[i - 1] = NULL;
         }
-        // create a process
-        // exit
         if ((strcmp(args[0], "exit") == 0))
             break;
 

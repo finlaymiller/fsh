@@ -1,4 +1,4 @@
-#include "fsh.h"
+#include "externs.h"
 
 void print_history(char *array[], int count)
 {
@@ -29,6 +29,7 @@ void print_history(char *array[], int count)
 		}
 	}
 }
+
 char *run_last_cmd(char *array[], int count)
 {
 
@@ -36,6 +37,7 @@ char *run_last_cmd(char *array[], int count)
 	char *command = array[num];
 	return command;
 }
+
 char *run_specific_cmd(char *array[], int count, int index)
 {
 	int i = 10;
