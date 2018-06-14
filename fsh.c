@@ -140,7 +140,7 @@ int main(void)
             args[i - 1] = NULL;
         }
 
-        // handle fork
+        // check for fork
         pid = fork();
 
         if (pid < 0)
